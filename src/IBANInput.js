@@ -6,6 +6,8 @@ const IBAN_START_CHARS_COUNT = 2;
 const IBAN_ALERT_DURATION = 1000;
 const IBAN_ALERT_COLOR = 'red';
 const IBAN_DEFAULT_COLOR = 'white';
+const TAB_KEY = 9;
+
 
 export default class IBANInput extends Component {
 
@@ -14,6 +16,7 @@ export default class IBANInput extends Component {
     this.state = {
       value: '',
       backgroundColor: IBAN_DEFAULT_COLOR,
+      zeroMode: false
     };
   }
 
@@ -25,7 +28,11 @@ export default class IBANInput extends Component {
     if (value.length <= IBAN_START_CHARS_COUNT) {
       return lastChar >= 'a' && lastChar <= 'z';
     }
-    const number = Number(lastChar);
+    return this.isNumberChar(lastChar);
+  }
+
+  isNumberChar(char) {
+    const number = Number(char);
     return number >= 0 && number <= 9;
   }
 
@@ -62,8 +69,34 @@ export default class IBANInput extends Component {
     }).join('').trim();
   }
 
+  rightPad(str, char, totalLength) {
+    const paddingSize = totalLength - str.length;
+    for(let i = 0; i < paddingSize; i++){
+      str += char;
+    }
+    return str;
+  }
+
+  activateZeroMode() {
+    const zeroMode = this.state.value.length >= IBAN_START_CHARS_COUNT;
+    let newState = { zeroMode };
+    if (zeroMode) {
+      newState.value = this.rightPad(this.state.value, '0', MAX_IBAN_SIZE);
+    }
+    this.setState(newState);
+    return zeroMode;
+  }
+
   onChange = (evt) => {
     this.updateIBAN(evt.target.value);
+  }
+
+  onKeyDown = (evt) => {
+    if (evt.keyCode === TAB_KEY) {
+      if (this.activateZeroMode()) {
+        evt.preventDefault();
+      }
+    }
   }
 
   render() {
@@ -76,6 +109,7 @@ export default class IBANInput extends Component {
         }}
         value={ this.formatIBAN(this.state.value) }
         onChange={ this.onChange }
+        onKeyDown= { this.onKeyDown }
       />
     );
   }
